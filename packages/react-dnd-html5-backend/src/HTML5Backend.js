@@ -520,42 +520,49 @@ export default class HTML5Backend {
 	}
 
 	handleTopDragOver(e) {
+		e.preventDefault()
+		this.latestEvent = e
+		if (this.isHandlingDragOver) {
+			return
+		}
+		this.isHandlingDragOver = true
 		const { dragOverTargetIds } = this
 		this.dragOverTargetIds = []
 
-		if (!this.monitor.isDragging()) {
-			// This is probably a native item type we don't understand.
-			// Prevent default "drop and blow away the whole document" action.
-			e.preventDefault()
-			e.dataTransfer.dropEffect = 'none'
-			return
-		}
+		requestAnimationFrame(() => {
+			if (!this.monitor.isDragging()) {
+				// This is probably a native item type we don't understand.
+				// Prevent default "drop and blow away the whole document" action.
+				e.preventDefault()
+				e.dataTransfer.dropEffect = 'none'
+				return
+			}
 
-		this.altKeyPressed = e.altKey
+			this.altKeyPressed = e.altKey
 
-		this.actions.hover(dragOverTargetIds, {
-			clientOffset: getEventClientOffset(e),
+			this.actions.hover(dragOverTargetIds, {
+				clientOffset: getEventClientOffset(e),
+			})
+
+			const canDrop = dragOverTargetIds.some(targetId =>
+				this.monitor.canDropOnTarget(targetId),
+			)
+
+			if (canDrop) {
+				// Show user-specified drop effect.
+				e.dataTransfer.dropEffect = this.getCurrentDropEffect()
+			} else if (this.isDraggingNativeItem()) {
+				// Don't show a nice cursor but still prevent default
+				// "drop and blow away the whole document" action.
+				e.dataTransfer.dropEffect = 'none'
+			} else if (this.checkIfCurrentDragSourceRectChanged()) {
+				// Prevent animating to incorrect position.
+				// Drop effect must be other than 'none' to prevent animation.
+				e.dataTransfer.dropEffect = 'move'
+			}
+
+			this.isHandlingDragOver = false
 		})
-
-		const canDrop = dragOverTargetIds.some(targetId =>
-			this.monitor.canDropOnTarget(targetId),
-		)
-
-		if (canDrop) {
-			// Show user-specified drop effect.
-			e.preventDefault()
-			e.dataTransfer.dropEffect = this.getCurrentDropEffect()
-		} else if (this.isDraggingNativeItem()) {
-			// Don't show a nice cursor but still prevent default
-			// "drop and blow away the whole document" action.
-			e.preventDefault()
-			e.dataTransfer.dropEffect = 'none'
-		} else if (this.checkIfCurrentDragSourceRectChanged()) {
-			// Prevent animating to incorrect position.
-			// Drop effect must be other than 'none' to prevent animation.
-			e.preventDefault()
-			e.dataTransfer.dropEffect = 'move'
-		}
 	}
 
 	handleTopDragLeaveCapture(e) {
