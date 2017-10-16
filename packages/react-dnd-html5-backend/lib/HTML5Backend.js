@@ -543,11 +543,11 @@ var HTML5Backend = function () {
 		}
 	}, {
 		key: 'handleTopDragOver',
-		value: function handleTopDragOver(e) {
+		value: function handleTopDragOver(ev) {
 			var _this6 = this;
 
-			e.preventDefault();
-			this.latestEvent = e;
+			ev.preventDefault();
+			this.latestEvent = ev;
 			if (this.isHandlingDragOver) {
 				return;
 			}
@@ -557,11 +557,12 @@ var HTML5Backend = function () {
 			this.dragOverTargetIds = [];
 
 			requestAnimationFrame(function () {
+				var e = _this6.latestEvent;
 				if (!_this6.monitor.isDragging()) {
 					// This is probably a native item type we don't understand.
 					// Prevent default "drop and blow away the whole document" action.
-					e.preventDefault();
 					e.dataTransfer.dropEffect = 'none';
+					_this6.isHandlingDragOver = false;
 					return;
 				}
 
